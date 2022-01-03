@@ -14,37 +14,51 @@ def print_json(payload):
 
 def line_notify(message, token):
   url = 'https://notify-api.line.me/api/notify'
-  headers = {'content-type':'application/x-www-form-urlencoded','Authorization':'Bearer '+token}
+  headers = {
+    'content-type': 'application/x-www-form-urlencoded',
+    'Authorization': 'Bearer ' + token
+  }
 
   r = requests.post(url, headers=headers, data = {'message':message})
-  return r.text
+  return r
 
+# Get values from .env
 API_KEY = os.getenv('API_KEY')
 API_SECRET = os.getenv('API_SECRET')
-
 LINE_NOTIFY_TOKEN = os.getenv('LINE_NOTIFY_TOKEN')
 
+coins = os.getenv('COINS').split(' ')
+
+# Initialize Bitkub
 bitkub = Bitkub()
 bitkub.set_api_key(API_KEY)
 bitkub.set_api_secret(API_SECRET)
 
-balance = bitkub.balances()
+# balance = bitkub.balances()
+last_prices = {}
 
-last_btc_price = bitkub.ticker(sym='THB_BTC')["THB_BTC"]["last"]
+history = bitkub.tradingview(sym='BTC_THB', int=1, frm=1633424427, to=1633427427)
+print_json(history)
 
+# Forever loop with 1 second sleep
 while True:
-  btc_price = bitkub.ticker(sym='THB_BTC')["THB_BTC"]["last"]
-  color = Fore.WHITE
+  prices = bitkub.ticker()
 
-  if btc_price > last_btc_price:
-    color = Fore.GREEN
-  elif btc_price < last_btc_price:
-    color = Fore.RED
+  for coin in coins:
+    price = prices[coin]["last"]
+    color = Fore.WHITE
 
-  print(color + str(btc_price))
-  # line_notify(str(btc_price), LINE_NOTIFY_TOKEN)
+    if price > last_prices.get(coin, 0):
+      color = Fore.GREEN
+    elif price < last_prices.get(coin, 0):
+      color = Fore.RED
 
-  last_btc_price = btc_price
-  time.sleep(1) # 1 second
+    print(color + coin + ': ' + str(price))
+    last_prices[coin] = price
+
+    # line_notify(str(btc_price), LINE_NOTIFY_TOKEN)
+
+  time.sleep(10) # 1 second
+  print('')
 
 
