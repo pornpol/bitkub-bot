@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 bitkub = "*"
 python-dotenv = "*"
+colorama = "*"
 
 [dev-packages]
 
